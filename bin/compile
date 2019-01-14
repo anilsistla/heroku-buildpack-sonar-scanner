@@ -17,19 +17,14 @@ ENV_DIR=$3
 LP_DIR=`cd $(dirname $0); cd ..; pwd`
 BUILDPACK_DIR="$(dirname $(dirname $0))"
 
-# config
-S3_BUCKET="ci-database-binary"
-POSTGRESQL_MAJOR_VERSION=10
-if [ -f "$ENV_DIR/POSTGRESQL_VERSION" ]
+SONAR_VERSION=3.3.0.1492
+
+if [ -f "$ENV_DIR/SONAR_VERSION" ]
 then
-  POSTGRESQL_MAJOR_VERSION="$(cat $ENV_DIR/POSTGRESQL_VERSION)"
+  SONAR_VERSION="$(cat $ENV_DIR/SONAR_VERSION)"
 fi
 
-case "$POSTGRESQL_MAJOR_VERSION" in
-  10)  POSTGRESQL_VERSION="10.5";;
-  9.6) POSTGRESQL_VERSION="9.6.9";;
-  *)   POSTGRESQL_VERSION="$POSTGRESQL_MAJOR_VERSION";;
-esac
+DOWNLOAD_URL=https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-$SONAR_VERSION-linux.zip
 
 function error() {
   echo " !     $*" >&2
@@ -51,15 +46,14 @@ function package_download() {
   stack="$4"
 
   mkdir -p $location
-  package="https://${S3_BUCKET}.s3.amazonaws.com/$stack/$engine-$version.tgz"
-  if ! wget --spider $package 2>/dev/null
+  if ! wget --spider $DOWNLOAD_URL 2>/dev/null
   then
-    error "Specified postgresql version ${POSTGRESQL_VERSION} is not available"
+    error "Specified sonar version ${SONAR_VERSION} is not available"
   fi
-  curl $package -s -o - | tar xzf - -C $location
+  curl $DOWNLOAD_URL -s -o - | tar xzf - -C $location
 }
 
-echo "Using postgresql version: ${POSTGRESQL_VERSION}" | indent
+echo "Using sonar version: ${SONAR_VERSION}" | indent
 
 case $STACK in
     cedar-14) : ;;
@@ -73,66 +67,12 @@ esac
 echo "Using stack version: ${STACK}" | indent
 
 # vendor directories
-VENDORED_POSTGRESQL=".indyno/vendor/postgresql"
+VENDORED_SONAR=".indyno/vendor/sonar-scanner"
 
-# vendor postgresql into the slug
-PATH="$BUILD_DIR/$VENDORED_POSTGRESQL/bin:$PATH"
-echo "-----> Fetching and vendoring postgresql into slug"
-mkdir -p "$BUILD_DIR/$VENDORED_POSTGRESQL"
-package_download "postgresql" "${POSTGRESQL_VERSION}" "${BUILD_DIR}/${VENDORED_POSTGRESQL}" "${STACK}"
+# vendor sonar into the slug
+PATH="$BUILD_DIR/$VENDORED_SONAR/bin:$PATH"
+echo "-----> Fetching and vendoring sonar into slug"
+mkdir -p "$BUILD_DIR/$VENDORED_SONAR"
+package_download "sonar" "${SONAR_VERSION}" "${BUILD_DIR}/$VENDORED_SONAR" "${STACK}"
 
-echo "-----> Initializing database"
-export PGHOST=/tmp
-DATABASE=postgres_buildpack_db
-
-# Set up and configure a database for Heroku CI
-user="u$(</dev/urandom tr -dc 'a-z0-9' | head -c 13)"
-password="p$(</dev/urandom tr -dc 'a-z0-9' | head -c 64)"
-
-export PGDATA=$BUILD_DIR/.indyno/vendor/postgresql/data
-LC_COLLATE=en_US.UTF-8  \
-LC_CTYPE=en_US.UTF-8    \
-LC_MESSAGES=en_US.UTF-8 \
-LC_MONETARY=en_US.UTF-8 \
-LC_NUMERIC=en_US.UTF-8  \
-LC_TIME=en_US.UTF-8     \
-initdb -E UTF8 | indent
-pg_ctl -l .pg.log -w start | indent
-psql -c "CREATE USER ${user} WITH SUPERUSER ENCRYPTED PASSWORD '${password}'" postgres | indent
-createdb --owner $user $DATABASE | indent
-DATABASE_URL="postgres://${user}:${password}@localhost:5432/${DATABASE}"
-# N.B.: we do not stop the server here because some buildpacks rely on
-# having a live database at DATABASE_URL in order to run the build
-
-echo "export PGHOST=$PGHOST" >> $BUILDPACK_DIR/export
-echo "export DATABASE_URL=$DATABASE_URL" >> $BUILDPACK_DIR/export
-
-# setting .profile.d script for database startup
-echo "-----> Copying .profile.d/00-pg-path.sh to add postgresql binaries to PATH"
-mkdir -p $BUILD_DIR/.profile.d
-cat<<\EOF > $BUILD_DIR/.profile.d/00-pg-path.sh
-PATH=$HOME/.indyno/vendor/postgresql/bin:$PATH
-
-export PGHOST=/tmp
-export PGDATA=$HOME/.indyno/vendor/postgresql/data
-
-if ! pg_ctl status >/dev/null;
-then
-  pg_ctl -l .pg.log -w start
-fi
-EOF
-
-cat<<EOF > $BUILD_DIR/.profile.d/01-pg-env.sh
-export DATABASE_URL="$DATABASE_URL"
-EOF
-
-cat<<EOF > $BUILDPACK_DIR/background
-PATH=$HOME/.indyno/vendor/postgresql/bin:$PATH
-export PGHOST="$PGHOST"
-export DATABASE_URL="$DATABASE_URL"
-export PGHOST=/tmp
-export PGDATA=$HOME/.indyno/vendor/postgresql/data
-pg_ctl -w restart >/dev/null
-EOF
-
-echo "-----> postgresql done"
+echo "-----> sonar done"
