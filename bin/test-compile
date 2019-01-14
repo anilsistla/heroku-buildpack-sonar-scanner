@@ -1,0 +1,78 @@
+#!/usr/bin/env bash
+# bin/compile <build-dir> <cache-dir>
+
+# fail fast
+set -e
+
+# debug
+# set -x
+
+# clean up
+unset GIT_DIR
+
+# parse and derive params
+BUILD_DIR=$1
+CACHE_DIR=$2
+ENV_DIR=$3
+LP_DIR=`cd $(dirname $0); cd ..; pwd`
+BUILDPACK_DIR="$(dirname $(dirname $0))"
+
+SONAR_VERSION=3.3.0.1492
+
+if [ -f "$ENV_DIR/SONAR_VERSION" ]
+then
+  SONAR_VERSION="$(cat $ENV_DIR/SONAR_VERSION)"
+fi
+
+DOWNLOAD_URL=https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-$SONAR_VERSION-linux.zip
+
+function error() {
+  echo " !     $*" >&2
+  exit 1
+}
+
+function indent() {
+  c='s/^/       /'
+  case $(uname) in
+    Darwin) sed -l "$c";;
+    *)      sed -u "$c";;
+  esac
+}
+
+function package_download() {
+  engine="$1"
+  version="$2"
+  location="$3"
+  stack="$4"
+
+  mkdir -p $location
+  if ! wget --spider $DOWNLOAD_URL 2>/dev/null
+  then
+    error "Specified sonar version ${SONAR_VERSION} is not available"
+  fi
+  curl $DOWNLOAD_URL -s -o - | tar xzf - -C $location
+}
+
+echo "Using sonar version: ${SONAR_VERSION}" | indent
+
+case $STACK in
+    cedar-14) : ;;
+    heroku-16) : ;;
+    heroku-16-build) : ;;
+    heroku-18) ;;
+    heroku-18-build) ;;
+    *) error "Unrecognized stack version: ${STACK}";;
+esac
+
+echo "Using stack version: ${STACK}" | indent
+
+# vendor directories
+VENDORED_SONAR=".indyno/vendor/sonar-scanner"
+
+# vendor sonar into the slug
+PATH="$BUILD_DIR/$VENDORED_SONAR/bin:$PATH"
+echo "-----> Fetching and vendoring sonar into slug"
+mkdir -p "$BUILD_DIR/$VENDORED_SONAR"
+package_download "sonar" "${SONAR_VERSION}" "${BUILD_DIR}/$VENDORED_SONAR" "${STACK}"
+
+echo "-----> sonar done"
