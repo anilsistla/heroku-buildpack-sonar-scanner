@@ -24,7 +24,7 @@ then
   SONAR_VERSION="$(cat $ENV_DIR/SONAR_VERSION)"
 fi
 
-DOWNLOAD_URL=https://github.com/SonarSource/sonar-scanner-cli/archive/$SONAR_VERSION.tar.gz
+DOWNLOAD_URL=https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-$SONAR_VERSION-linux.zip
 
 function error() {
   echo " !     $*" >&2
@@ -40,6 +40,8 @@ function indent() {
 }
 
 function package_download() {
+  tmp_zip=$(mktemp)
+	tmp_extract=$(mktemp)
   engine="$1"
   version="$2"
   location="$3"
@@ -50,7 +52,12 @@ function package_download() {
   then
     error "Specified sonar version ${SONAR_VERSION} is not available"
   fi
-  curl -L $DOWNLOAD_URL -s -o - | tar xzf - -C $location
+	echo "Downloading.." | indent
+  curl -L $DOWNLOAD_URL -s -o $tmp_zip
+	echo "Unzipping.." | indent
+	unzip -qo $tmp_zip -d $tmp_extract
+	echo "Moving files.." | indent
+	mv $tmp_extract/sonar-scanner-${SONAR_VERSION}-linux/* $location
 }
 
 echo "Using sonar version: ${SONAR_VERSION}" | indent
@@ -67,10 +74,9 @@ esac
 echo "Using stack version: ${STACK}" | indent
 
 # vendor directories
-VENDORED_SONAR=".tools/sonar-scanner"
+VENDORED_SONAR="tools/sonar-scanner"
 
 # vendor sonar into the slug
-PATH="$BUILD_DIR/$VENDORED_SONAR/bin:$PATH"
 echo "-----> Fetching and vendoring sonar into slug"
 mkdir -p "$BUILD_DIR/$VENDORED_SONAR"
 package_download "sonar" "${SONAR_VERSION}" "${BUILD_DIR}/$VENDORED_SONAR" "${STACK}"
