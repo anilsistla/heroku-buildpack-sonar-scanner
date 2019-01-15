@@ -24,7 +24,7 @@ then
   SONAR_VERSION="$(cat $ENV_DIR/SONAR_VERSION)"
 fi
 
-DOWNLOAD_URL=https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-$SONAR_VERSION-linux.zip
+DOWNLOAD_URL=https://github.com/SonarSource/sonar-scanner-cli/archive/$SONAR_VERSION.tar.gz
 
 function error() {
   echo " !     $*" >&2
