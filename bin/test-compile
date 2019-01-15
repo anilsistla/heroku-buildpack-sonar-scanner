@@ -41,7 +41,7 @@ function indent() {
 
 function package_download() {
   tmp_zip=$(mktemp)
-	tmp_extract=$(mktemp)
+	tmp_extract=$(mktemp -d)
   engine="$1"
   version="$2"
   location="$3"
