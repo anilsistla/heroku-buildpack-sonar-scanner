@@ -67,7 +67,7 @@ esac
 echo "Using stack version: ${STACK}" | indent
 
 # vendor directories
-VENDORED_SONAR=".indyno/vendor/sonar-scanner"
+VENDORED_SONAR=".tools/sonar-scanner"
 
 # vendor sonar into the slug
 PATH="$BUILD_DIR/$VENDORED_SONAR/bin:$PATH"
