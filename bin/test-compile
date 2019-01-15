@@ -23,7 +23,7 @@ if [ -f "$ENV_DIR/SONAR_VERSION" ]
 then
   SONAR_VERSION="$(cat $ENV_DIR/SONAR_VERSION)"
 fi
-		     https://github.com/yarnpkg/yarn/releases/download/v0.23.4/yarn-v0.23.4.tar.gz
+
 DOWNLOAD_URL=https://github.com/SonarSource/sonar-scanner-cli/archive/$SONAR_VERSION.tar.gz
 
 function error() {
