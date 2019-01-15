@@ -83,7 +83,7 @@ package_download "sonar" "${SONAR_VERSION}" "${BUILD_DIR}/$VENDORED_SONAR" "${ST
 echo "-----> Copying .profile.d/00-sonar-path.sh to add sonar binaries to PATH"
 mkdir -p $BUILD_DIR/.profile.d
 cat<<\EOF > $BUILD_DIR/.profile.d/00-sonar-path.sh
-export PATH=$HOME/$VENDORED_SONAR/bin:$PATH
+PATH=$HOME/.sonar-scanner/bin:$PATH
 EOF
 
 echo "-----> sonar done"
