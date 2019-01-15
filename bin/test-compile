@@ -23,7 +23,7 @@ if [ -f "$ENV_DIR/SONAR_VERSION" ]
 then
   SONAR_VERSION="$(cat $ENV_DIR/SONAR_VERSION)"
 fi
-
+		     https://github.com/yarnpkg/yarn/releases/download/v0.23.4/yarn-v0.23.4.tar.gz
 DOWNLOAD_URL=https://github.com/SonarSource/sonar-scanner-cli/archive/$SONAR_VERSION.tar.gz
 
 function error() {
@@ -50,7 +50,7 @@ function package_download() {
   then
     error "Specified sonar version ${SONAR_VERSION} is not available"
   fi
-  curl $DOWNLOAD_URL -s -o - | tar xzf - -C $location
+  curl -L $DOWNLOAD_URL -s -o - | tar xzf - -C $location
 }
 
 echo "Using sonar version: ${SONAR_VERSION}" | indent
