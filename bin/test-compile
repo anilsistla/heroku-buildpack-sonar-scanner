@@ -52,11 +52,9 @@ function package_download() {
   then
     error "Specified sonar version ${SONAR_VERSION} is not available"
   fi
-	echo "Downloading.." | indent
+
   curl -L $DOWNLOAD_URL -s -o $tmp_zip
-	echo "Unzipping.." | indent
 	unzip -qo $tmp_zip -d $tmp_extract
-	echo "Moving files.." | indent
 	mv $tmp_extract/sonar-scanner-${SONAR_VERSION}-linux/* $location
 }
 
@@ -74,11 +72,18 @@ esac
 echo "Using stack version: ${STACK}" | indent
 
 # vendor directories
-VENDORED_SONAR="tools/sonar-scanner"
+VENDORED_SONAR=".sonar-scanner"
 
 # vendor sonar into the slug
 echo "-----> Fetching and vendoring sonar into slug"
 mkdir -p "$BUILD_DIR/$VENDORED_SONAR"
 package_download "sonar" "${SONAR_VERSION}" "${BUILD_DIR}/$VENDORED_SONAR" "${STACK}"
+
+# setting .profile.d script for database startup
+echo "-----> Copying .profile.d/00-sonar-path.sh to add sonar binaries to PATH"
+mkdir -p $BUILD_DIR/.profile.d
+cat<<\EOF > $BUILD_DIR/.profile.d/00-sonar-path.sh
+export PATH=$HOME/$VENDORED_SONAR/bin:$PATH
+EOF
 
 echo "-----> sonar done"
