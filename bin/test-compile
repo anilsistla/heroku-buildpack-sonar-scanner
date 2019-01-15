@@ -80,10 +80,12 @@ mkdir -p "$BUILD_DIR/$VENDORED_SONAR"
 package_download "sonar" "${SONAR_VERSION}" "${BUILD_DIR}/$VENDORED_SONAR" "${STACK}"
 
 # setting .profile.d script for database startup
-echo "-----> Copying .profile.d/00-sonar-path.sh to add sonar binaries to PATH"
+echo "-----> Copying .profile.d/1000-sonar-path.sh to add sonar binaries to PATH"
 mkdir -p $BUILD_DIR/.profile.d
-cat<<\EOF > $BUILD_DIR/.profile.d/00-sonar-path.sh
-PATH=$HOME/.sonar-scanner/bin:$PATH
+cat<<\EOF > $BUILD_DIR/.profile.d/1000-sonar-path.sh
+export PATH=$HOME/.sonar-scanner/bin:$PATH
+# set a default LANG if it does not exist in the environment
+export SCANNER_PATH=${SCANNER_PATH:$HOME/.sonar-scanner/bin}
 EOF
 
 echo "-----> sonar done"
