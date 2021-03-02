@@ -17,7 +17,7 @@ ENV_DIR=$3
 LP_DIR=`cd $(dirname $0); cd ..; pwd`
 BUILDPACK_DIR="$(dirname $(dirname $0))"
 
-SONAR_VERSION=3.3.0.1492
+SONAR_VERSION=4.6.0.2311
 
 if [ -f "$ENV_DIR/SONAR_VERSION" ]
 then
