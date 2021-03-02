@@ -66,6 +66,8 @@ case $STACK in
     heroku-16-build) : ;;
     heroku-18) ;;
     heroku-18-build) ;;
+    heroku-20) : ;;
+    heroku-20-build) ;;
     *) error "Unrecognized stack version: ${STACK}";;
 esac
 
